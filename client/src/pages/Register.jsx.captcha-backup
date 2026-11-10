@@ -1,0 +1,247 @@
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { DevTool } from "@hookform/devtools";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import ErrorInputMessage from "../components/ErrorInputMessage";
+import MessageAuthForm from "../components/MessageAuthForm";
+import { useState, useRef } from "react";
+import { FiLoader } from "react-icons/fi";
+import Recaptcha from "react-google-recaptcha";
+import toast from "react-hot-toast";
+import { useRegisterMutation } from "../app/apiCalls/authCalls";
+import { FcGoogle } from "react-icons/fc";
+import { IoEyeSharp, IoEyeOffSharp } from "react-icons/io5"; // Import icons for eye
+
+const registerSchema = yup.object({
+  firstName: yup
+    .string("first name must be a valid first name")
+    .required("first name is a required field"),
+  lastName: yup
+    .string("last name must be a valid last name")
+    .required("last name is a required field"),
+  email: yup.string().email().required(),
+  password: yup
+    .string()
+    .required()
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/,
+      "Must Contain 8 Characters, One Uppercase, One Lowercase, One Number, One Special Case Character"
+    ),
+});
+
+const Register = () => {
+  const [userCreated, setUserCreated] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isValid, isDirty },
+  } = useForm({
+    resolver: yupResolver(registerSchema),
+  });
+
+  const navigate = useNavigate();
+  const recaptchaToken = useRef();
+
+  const {
+    mutateAsync: registerAsync,
+    isPending: isRegisterLoading,
+    isError: isRegisterError,
+    error: registerError,
+  } = useRegisterMutation();
+
+  const onSubmit = async (body) => {
+    try {
+      const token = await recaptchaToken.current.executeAsync();
+      body.recaptchaToken = token;
+
+      const isRegisterSuccess = await registerAsync(body);
+
+      if (isRegisterSuccess.data.status === 201) {
+        toast.success("Account Created Successfully!", { duration: 2000 });
+        setTimeout(() => {
+          navigate("/auth/login");
+        }, 2000);
+      }
+
+      recaptchaToken.current.reset();
+    } catch (e) {
+      toast.error("This account already exist!");
+      recaptchaToken.current.reset();
+    }
+  };
+
+  const handleGoogleRegister = () => {
+    window.open("http://localhost:8000/api/v1/auth/google", "_blank");
+  };
+
+  return (
+    <>
+      <div className="h-[100vh]">
+        <div className="grid md:grid-cols-2 h-full grid-row-2">
+          <div className="bg-secondary p-8 relative after:rotate-45 before:rotate-45 after:absolute before:absolute after:w-[500px] before:w-[500px] after:h-[500px] before:h-[500px] after:bg-gradient-to-b before:bg-gradient-to-t after:from-primary before:from-primary after:right-[-100px] before:left-[-100px] after:top-[-100px] before:bottom-[-100px] overflow-hidden after:opacity-[0.2] before:opacity-[0.2] after:rounded-full before:rounded-full">
+            <Link to={"/"}>
+              <div>
+                <img
+                  src="http://localhost:5173/src/static/logo_white.png"
+                  width={90}
+                  height={90}
+                  alt="logo"
+                />
+              </div>
+            </Link>
+            <div className="text-[4rem] text-white font-[100] absolute bottom-[100px] hidden md:block">
+              Making Healthcare Accessible Anytime Anywhere
+            </div>
+          </div>
+          <div className="flex items-center justify-center flex-col">
+            <div className="text-[1.5rem] font-bold py-5">
+              Create an account
+            </div>
+            <div className="w-[400px]">
+              {userCreated ? (
+                <MessageAuthForm
+                  message={"user created success"}
+                  isError={isRegisterError}
+                />
+              ) : null}
+            </div>
+            <form className="w-[400px]" onSubmit={handleSubmit(onSubmit)}>
+              <div className="flex flex-col my-5 w-full">
+                <label className="text-md" htmlFor="firstName">
+                  First Name
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.firstName?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type="name"
+                  name="firstName"
+                  placeholder="First Name"
+                  {...register("firstName")}
+                />
+                <ErrorInputMessage message={errors.firstName?.message} />
+              </div>
+              <div className="flex flex-col my-5 w-full">
+                <label className="text-md" htmlFor="lastName">
+                  Last Name
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.lastName?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type="text"
+                  name="lastName"
+                  placeholder="Last Name"
+                  {...register("lastName")}
+                />
+                <ErrorInputMessage message={errors.lastName?.message} />
+              </div>
+              <div className="flex flex-col my-5 w-full">
+                <label className="text-md" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.email?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type="text"
+                  name="email"
+                  placeholder="company@domain.com"
+                  {...register("email")}
+                />
+                <ErrorInputMessage message={errors.email?.message} />
+              </div>
+              <div className="flex flex-col my-5 w-full relative">
+                <label className="text-md" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.password?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Enter your password"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute right-3 top-9 text-gray-500"
+                >
+                  {showPassword ? (
+                    <IoEyeOffSharp className="text-xl" />
+                  ) : (
+                    <IoEyeSharp className="text-xl" />
+                  )}
+                </button>
+                <ErrorInputMessage message={errors.password?.message} />
+
+                {/* <ul className="mt-5">
+                  {errors.password?.message.split(",").map((passwordErr) => (
+                    <li key={crypto.randomUUID()} className="text-red-500">
+                      <ErrorInputMessage message={passwordErr} />
+                    </li>
+                  ))}
+                </ul> */}
+              </div>
+              <div className="w-full">
+                <button
+                  className={`bg-secondary p-2 w-full text-white rounded cursor-pointer`}
+                  type="submit"
+                  disabled={isRegisterLoading}
+                >
+                  {isRegisterLoading ? (
+                    <FiLoader className="animate-spin font-semibold text-md text-center w-full" />
+                  ) : (
+                    "Register Now"
+                  )}
+                </button>
+              </div>
+            </form>
+            <button
+              className="border-secondary border w-[400px] p-2 border-opacity-50 text-opacity-90 rounded text-secondary cursor-pointer mt-2 flex items-center gap-3 justify-center"
+              onClick={handleGoogleRegister}
+            >
+              <FcGoogle />
+              Continue with Google
+            </button>
+            <div>
+              <Recaptcha
+                ref={recaptchaToken}
+                sitekey={import.meta.env.VITE_CAPTCHA_KEY}
+                size="invisible"
+              />
+            </div>
+            <div className="my-5 text-gray-500">
+              Already Have An Account{" "}
+              <Link
+                to={"/auth/login"}
+                className="text-secondary font-bold underline"
+              >
+                Log in
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      <DevTool control={control} />
+    </>
+  );
+};
+
+export default Register;

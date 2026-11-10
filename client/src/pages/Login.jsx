@@ -1,0 +1,177 @@
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useDispatch } from "react-redux";
+import { userActions } from "../app/features/User";
+import { FiLoader } from "react-icons/fi";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useLoginMutation } from "../app/apiCalls/authCalls";
+import { FcGoogle } from "react-icons/fc";
+import { IoEyeSharp, IoEyeOffSharp } from "react-icons/io5";
+import ErrorInputMessage from "../components/ErrorInputMessage";
+
+const loginSchema = yup.object({
+  email: yup.string().email().required(),
+  password: yup.string().required().min(8),
+});
+
+const Login = () => {
+  const dispatch = useDispatch();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+  });
+
+  const { login } = userActions;
+
+  const { mutateAsync: loginAsync, isPending: isLoginLoading } =
+    useLoginMutation();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevState) => !prevState);
+  };
+
+  const onSubmit = async (body) => {
+    try {
+      const isLoginSuccess = await loginAsync(body);
+
+      if (isLoginSuccess?.data.status === 200) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(isLoginSuccess.data.userInfo)
+        );
+        dispatch(login(isLoginSuccess.data.userInfo));
+        toast.success("Login Successfully!");
+      }
+    } catch (e) {
+      toast.error(
+        e.response?.data?.message || "Invalid Email or Password!"
+      );
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.open(
+      "http://localhost:8000/api/v1/auth/google",
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  return (
+    <>
+      <div className="h-[100vh]">
+        <div className="grid md:grid-cols-2 h-full grid-row-2">
+          <div className="bg-secondary p-8 relative after:rotate-45 before:rotate-45 after:absolute before:absolute after:w-[500px] before:w-[500px] after:h-[500px] before:h-[500px] after:bg-gradient-to-b before:bg-gradient-to-t after:from-primary before:from-primary after:right-[-100px] before:left-[-100px] after:top-[-100px] before:bottom-[-100px] overflow-hidden after:opacity-[0.2] before:opacity-[0.2] after:rounded-full before:rounded-full">
+            <Link to={"/"}>
+              <div>
+                <img
+                  src="http://localhost:5173/src/static/logo_white.png"
+                  width={90}
+                  height={90}
+                  alt="logo"
+                />
+              </div>
+            </Link>
+            <div className="text-[4rem] text-white font-[100] absolute bottom-[100px] hidden md:block">
+              Making Healthcare Accessible Anytime Anywhere
+            </div>
+          </div>
+          <div className="flex items-center justify-center flex-col">
+            <div className="text-[1.5rem] font-bold py-5">
+              Login to your account
+            </div>
+            <form className="w-[400px]" onSubmit={handleSubmit(onSubmit)}>
+              <div className="flex flex-col my-5 w-full">
+                <label className="text-md" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.password?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type="text"
+                  placeholder="company@domain.com"
+                  {...register("email")}
+                />
+                <ErrorInputMessage message={errors.email?.message} />
+              </div>
+              <div className="flex flex-col my-5 w-full relative">
+                <label className="text-md" htmlFor="password">
+                  Password
+                </label>
+                <input
+                  className={`border-2 focus:outline-none ${
+                    errors.password?.message
+                      ? "border-red-500"
+                      : "border-secondary"
+                  } border-opacity-[0.3] p-2 rounded`}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  {...register("password")}
+                />
+                <ErrorInputMessage message={errors.password?.message} />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 top-9 text-gray-500"
+                >
+                  {showPassword ? (
+                    <IoEyeOffSharp className="text-xl" />
+                  ) : (
+                    <IoEyeSharp className="text-xl" />
+                  )}
+                </button>
+              </div>
+              <div className="mb-5 text-right text-md text-secondary underline">
+                <Link to="/auth/forgetPassword">Forget Your password ?</Link>
+              </div>
+              <div className="w-full">
+                <button
+                  className="bg-secondary p-2 w-full text-white rounded cursor-pointer"
+                  type="submit"
+                  disabled={isLoginLoading}
+                >
+                  {isLoginLoading ? (
+                    <FiLoader className="animate-spin font-semibold text-md text-center w-full" />
+                  ) : (
+                    "Login Now"
+                  )}
+                </button>
+              </div>
+            </form>
+            <button
+              className="border-secondary border w-[400px] p-2 border-opacity-50 text-opacity-90 rounded text-secondary cursor-pointer mt-2 flex items-center gap-3 justify-center"
+              onClick={handleGoogleLogin}
+            >
+              <FcGoogle />
+              Continue with Google
+            </button>
+            <div>
+            </div>
+            <div className="my-5 text-gray-500">
+              Don&apos;t Have An Account{" "}
+              <Link
+                to={"/auth/register"}
+                className="text-secondary font-bold underline"
+              >
+                Sign up
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Login;
