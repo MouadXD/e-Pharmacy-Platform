@@ -6,7 +6,6 @@ import { useState } from "react";
 import Modal from "../../components/Modal";
 import InputRounded from "../../components/InputRounded";
 import { useForm } from "react-hook-form";
-import { DevTool } from "@hookform/devtools";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import ErrorInputMessage from "../../components/ErrorInputMessage";
@@ -239,7 +238,6 @@ const Suppliers = () => {
           />
         </Container>
       </div>
-      <DevTool control={control} />
     </>
   );
 };

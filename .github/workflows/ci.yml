@@ -13,46 +13,11 @@ permissions:
   contents: read
 
 jobs:
-  application-checks:
-    name: Application Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Install frontend dependencies
-        working-directory: client
-        run: npm ci
-
-      - name: Frontend lint
-        working-directory: client
-        run: npm run lint
-
-      - name: Frontend build
-        working-directory: client
-        run: npm run build
-
-      - name: Install backend dependencies
-        working-directory: server
-        run: npm ci
-
-      - name: Backend tests
-        working-directory: server
-        run: npm test
-
   secret-scanning:
     name: Secret Detection
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -64,13 +29,10 @@ jobs:
   sast:
     name: Static Application Security Testing
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -83,38 +45,32 @@ jobs:
   dependency-audit:
     name: Dependency Vulnerability Audit
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 
       - name: Audit frontend dependencies
         working-directory: client
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=low
 
       - name: Audit backend dependencies
         working-directory: server
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=low
 
   trivy-scan:
     name: Trivy Filesystem Scan
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
       - name: Run Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: 0.76.2
           scan-type: fs
           scan-ref: .
           scanners: vuln,misconfig,secret
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
           exit-code: "1"

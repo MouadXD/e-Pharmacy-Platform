@@ -1,6 +1,5 @@
 import Container from "../../../components/Container";
 import { useForm } from "react-hook-form";
-import { DevTool } from "@hookform/devtools";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import ErrorInputMessage from "../../../components/ErrorInputMessage";
@@ -98,7 +97,7 @@ const NewProduct = () => {
     };
     setValue("expiredAt", formatDate(productata?.data?.data?.expiredAt));
     const category = categoriesData?.data?.data?.filter(
-      (category) => category._id === productata?.data?.data?.categoryId
+      (category) => category._id === productata?.data?.data?.categoryId,
     );
     setCategory({ value: category[0]?._id, label: category[0]?.title });
   }, [productata]);
@@ -395,7 +394,7 @@ const NewProduct = () => {
                             className="cursor-pointer"
                             onClick={() => {
                               setBenefits(
-                                benefits.filter((item) => item !== benefit)
+                                benefits.filter((item) => item !== benefit),
                               );
                             }}
                           />
@@ -507,7 +506,7 @@ const NewProduct = () => {
                             className="cursor-pointer"
                             onClick={() => {
                               setSafetyInfos(
-                                uses.filter((item) => item !== safetyItem)
+                                uses.filter((item) => item !== safetyItem),
                               );
                             }}
                           />
@@ -629,7 +628,6 @@ const NewProduct = () => {
           </form>
         </Container>
       </div>
-      <DevTool control={control} />
     </>
   );
 };

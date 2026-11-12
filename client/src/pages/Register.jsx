@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { DevTool } from "@hookform/devtools";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import ErrorInputMessage from "../components/ErrorInputMessage";
@@ -25,7 +24,7 @@ const registerSchema = yup.object({
     .required()
     .matches(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})/,
-      "Must Contain 8 Characters, One Uppercase, One Lowercase, One Number, One Special Case Character"
+      "Must Contain 8 Characters, One Uppercase, One Lowercase, One Number, One Special Case Character",
     ),
 });
 
@@ -69,7 +68,7 @@ const Register = () => {
     window.open(
       "http://localhost:8000/api/v1/auth/google",
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -215,8 +214,7 @@ const Register = () => {
               <FcGoogle />
               Continue with Google
             </button>
-            <div>
-            </div>
+            <div></div>
             <div className="my-5 text-gray-500">
               Already Have An Account{" "}
               <Link
@@ -229,7 +227,6 @@ const Register = () => {
           </div>
         </div>
       </div>
-      <DevTool control={control} />
     </>
   );
 };

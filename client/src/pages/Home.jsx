@@ -24,7 +24,6 @@ import { FaCapsules } from "react-icons/fa";
 import { FaUserNurse } from "react-icons/fa";
 import { RiAlarmWarningLine } from "react-icons/ri";
 import { GiChemicalDrop } from "react-icons/gi";
-import { faker } from "@faker-js/faker";
 import { useTranslation } from "react-i18next";
 import isoToRedableDate from "../helpers/isoToRedableDate";
 import { MdOutlineGridView } from "react-icons/md";

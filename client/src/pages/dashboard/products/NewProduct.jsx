@@ -2,7 +2,6 @@ import LocationRight from "../../../components/LocationRight";
 import Container from "../../../components/Container";
 import { FaRegImages } from "react-icons/fa6";
 import { useForm } from "react-hook-form";
-import { DevTool } from "@hookform/devtools";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import ErrorInputMessage from "../../../components/ErrorInputMessage";
@@ -372,7 +371,7 @@ const NewProduct = () => {
                             className="cursor-pointer"
                             onClick={() => {
                               setBenefits(
-                                benefits.filter((item) => item !== benefit)
+                                benefits.filter((item) => item !== benefit),
                               );
                             }}
                           />
@@ -484,7 +483,7 @@ const NewProduct = () => {
                             className="cursor-pointer"
                             onClick={() => {
                               setSafetyInfos(
-                                uses.filter((item) => item !== safetyItem)
+                                uses.filter((item) => item !== safetyItem),
                               );
                             }}
                           />
@@ -600,7 +599,6 @@ const NewProduct = () => {
           </form>
         </Container>
       </div>
-      <DevTool control={control} />
     </>
   );
 };
