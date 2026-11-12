@@ -1,6 +1,56 @@
 const crypto = require("crypto");
+const CustomError = require("./customError");
 
 const isProduction = () => process.env.NODE_ENV === "production";
+
+const getAllowedOrigins = () => {
+  const configuredOrigins =
+    process.env.CORS_ORIGIN ||
+    process.env.FRONTEND_URL ||
+    "http://localhost:5173";
+
+  return configuredOrigins
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const authCookieNames = ["refresh_token", "connect.sid"];
+
+const hasAuthCookie = (req) => {
+  const cookieNames = req.headers?.cookie
+    ? req.headers.cookie
+        .split(";")
+        .map((cookie) => cookie.trim().split("=")[0])
+    : Object.keys(req.cookies || {});
+
+  return cookieNames.some((name) => authCookieNames.includes(name));
+};
+
+const validateUnsafeRequestOrigin = (req, _res, next) => {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    return next();
+  }
+
+  const origin = req.get("origin");
+
+  // Browser requests carrying authentication cookies must identify their
+  // origin. Requests without auth cookies can omit Origin for non-browser
+  // clients; clients that use auth cookies can send an allowed Origin.
+  if (!origin) {
+    if (hasAuthCookie(req)) {
+      return next(new CustomError("Origin header required", 403));
+    }
+
+    return next();
+  }
+
+  if (getAllowedOrigins().includes(origin)) {
+    return next();
+  }
+
+  return next(new CustomError("Origin not allowed", 403));
+};
 
 const refreshCookieOptions = () => ({
   httpOnly: true,
@@ -38,6 +88,8 @@ const getPagination = (query = {}, defaultLimit = 10, maxLimit = 100) => {
 
 module.exports = {
   isProduction,
+  getAllowedOrigins,
+  validateUnsafeRequestOrigin,
   refreshCookieOptions,
   clearCookieOptions,
   hashToken,

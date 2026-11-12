@@ -28,6 +28,7 @@ import { MdFavorite } from "react-icons/md";
 import { MdLanguage } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 import { LiaFlagUsaSolid } from "react-icons/lia";
+import { logoutUser } from "../app/apiCalls/authCalls";
 
 const Navbar = () => {
   const [isAllCategoriesOpened, setIsAllCategoriesOpen] = useState(false);
@@ -47,9 +48,17 @@ const Navbar = () => {
   const userInfo = useSelector((state) => state.user.userInfo);
   const cart = useSelector((state) => state.cart);
 
-  const handleProvidersLogout = () => {
-    window.open("http://localhost:8000/api/v1/auth/logout", "_self");
-    toast.success("Logout Successfully");
+  const handleProvidersLogout = async () => {
+    try {
+      await logoutUser();
+      dispatch(logout());
+      toast.success("Logout Successfully");
+      navigate("/auth/login");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Logout failed. Please try again."
+      );
+    }
   };
 
   // const {
@@ -165,11 +174,7 @@ const Navbar = () => {
                         </div> */}
                         <div
                           className="p-[2px] bg-secondary mt-2 rounded-l-2xl rounded-br-2xl text-center uppercase cursor-pointer transition-all text-white"
-                          onClick={() => {
-                            dispatch(logout());
-                            // navigate("/auth/login");
-                            handleProvidersLogout();
-                          }}
+                          onClick={handleProvidersLogout}
                         >
                           {/* <FaPowerOff className="text-sm" /> */}
                           <span className="text-xs font-bold">Logout</span>

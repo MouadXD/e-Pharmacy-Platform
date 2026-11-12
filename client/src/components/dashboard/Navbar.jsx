@@ -1,10 +1,12 @@
 import Container from "../Container";
 import navbarItems from "../../helpers/navbarItems";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import { useState, useRef, useEffect } from "react"; // Import useRef and useEffect
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import { userActions } from "../../app/features/User";
+import { logoutUser } from "../../app/apiCalls/authCalls";
 
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -13,6 +15,21 @@ const Navbar = () => {
   const user = useSelector((state) => state.user.userInfo);
   const { logout } = userActions;
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      dispatch(logout());
+      setIsProfileOpen(false);
+      toast.success("Logout Successfully");
+      navigate("/auth/login");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Logout failed. Please try again."
+      );
+    }
+  };
 
   let currentPath = useLocation().pathname;
   currentPath = "/" + currentPath.split("/").slice(-1);
@@ -86,13 +103,7 @@ const Navbar = () => {
                         </li>
                         <li
                           className="bg-red-500 text-white cursor-pointer block w-full p-2"
-                          onClick={() => {
-                            dispatch(logout());
-                            setIsProfileOpen(false);
-                            window.location.assign(
-                              "http://localhost:8000/api/v1/auth/logout"
-                            );
-                          }}
+                          onClick={handleLogout}
                         >
                           Logout
                         </li>

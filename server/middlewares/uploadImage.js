@@ -1,15 +1,25 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const CustomError = require("../utils/customError");
 
-const uploadDirectory = path.join(__dirname, "../upload");
+const uploadDirectory = path.resolve(__dirname, "../upload");
 fs.mkdirSync(uploadDirectory, { recursive: true });
+
+const safeFieldName = /^[a-zA-Z0-9_-]+$/;
 
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
     callBack(null, uploadDirectory);
   },
   filename: (req, file, callBack) => {
+    if (
+      typeof file.fieldname !== "string" ||
+      !safeFieldName.test(file.fieldname)
+    ) {
+      return callBack(new CustomError("Invalid upload filename", 400));
+    }
+
     callBack(
       null,
       `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}.jpeg`,

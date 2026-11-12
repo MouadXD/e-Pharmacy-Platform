@@ -12,7 +12,7 @@ const { rateLimit } = require("express-rate-limit");
 
 const app = express();
 
-const { isProduction } = require("./utils/security");
+const { isProduction, getAllowedOrigins } = require("./utils/security");
 const CustomError = require("./utils/customError");
 const errorHandler = require("./middlewares/errorHandler.js");
 const notFound = require("./routes/notFoundRoute.js");
@@ -34,14 +34,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = (
-  process.env.CORS_ORIGIN ||
-  process.env.FRONTEND_URL ||
-  "http://localhost:5173"
-)
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = getAllowedOrigins();
 
 app.use(
   cors({
@@ -113,6 +106,7 @@ app.use(
       httpOnly: true,
       secure: isProduction(),
       sameSite: "lax",
+      path: "/",
       maxAge: 24 * 60 * 60 * 1000,
     },
   }),

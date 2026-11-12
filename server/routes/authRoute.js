@@ -14,6 +14,7 @@ const {
   clearCookieOptions,
   isProduction,
   refreshCookieOptions,
+  validateUnsafeRequestOrigin,
 } = require("../utils/security");
 
 const recaptchaMiddleware =
@@ -79,6 +80,7 @@ authRoute.post(
 
 authRoute.post(
   "/login",
+  validateUnsafeRequestOrigin,
   authLimiter,
   validateRequest(loginSchema),
   recaptchaMiddleware,
@@ -161,8 +163,9 @@ authRoute.get("/google/failure", async (req, res) => {
   return res.redirect(`${FRONTEND_URL}/auth/login`);
 });
 
-authRoute.get(
+authRoute.post(
   "/logout",
+  validateUnsafeRequestOrigin,
   asyncErrorHandler(async (req, res) => {
     const refreshToken = req.cookies?.refresh_token;
 
@@ -187,7 +190,11 @@ authRoute.get(
     res.clearCookie("connect.sid", clearCookieOptions());
     res.clearCookie("user", clearCookieOptions());
 
-    return res.redirect(`${FRONTEND_URL}/auth/login`);
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Logged out successfully",
+    });
   }),
 );
 

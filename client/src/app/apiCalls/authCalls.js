@@ -1,6 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
+export const logoutUser = () =>
+  axios.post("auth/logout", {}, { withCredentials: true });
+
 export const useLoginMutation = () => {
   return useMutation({
     mutationKey: ["login"],
