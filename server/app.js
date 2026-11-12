@@ -12,7 +12,11 @@ const { rateLimit } = require("express-rate-limit");
 
 const app = express();
 
-const { isProduction, getAllowedOrigins } = require("./utils/security");
+const {
+  isProduction,
+  getAllowedOrigins,
+  validateUnsafeRequestOrigin,
+} = require("./utils/security");
 const CustomError = require("./utils/customError");
 const errorHandler = require("./middlewares/errorHandler.js");
 const notFound = require("./routes/notFoundRoute.js");
@@ -136,6 +140,10 @@ const apiLimiter = rateLimit({
 });
 
 app.use("/api/v1", apiLimiter);
+
+// Protect every state-changing API route below from cross-origin requests.
+// The Stripe webhook above is signature-verified and intentionally excluded.
+app.use("/api/v1", validateUnsafeRequestOrigin);
 
 // Route modules
 const authRoute = require("./routes/authRoute.js");
