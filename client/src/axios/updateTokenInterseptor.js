@@ -2,6 +2,7 @@ import axios from "axios";
 import { store } from "../app/store";
 import { userActions } from "../app/features/User";
 import safeJsonParse from "../helpers/safeJsonParse";
+import { getCsrfToken } from "./csrf";
 
 const authEndpoints = [
   "auth/login",
@@ -27,8 +28,17 @@ const refreshAccessToken = async () => {
       headers: { Accept: "application/json" },
     });
 
-    refreshPromise = refreshClient
-      .post("token/refresh", {}, { withCredentials: true })
+    refreshPromise = getCsrfToken()
+      .then((csrfToken) =>
+        refreshClient.post(
+          "token/refresh",
+          {},
+          {
+            withCredentials: true,
+            headers: { "X-CSRF-Token": csrfToken },
+          }
+        )
+      )
       .then((response) => {
         const accessToken = response.data?.accessToken;
 

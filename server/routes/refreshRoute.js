@@ -3,8 +3,16 @@ const express = require("express");
 const refreshRoute = express.Router();
 
 const refresh = require("../controllers/refreshController");
-const { validateUnsafeRequestOrigin } = require("../utils/security");
+const {
+  validateUnsafeRequestOrigin,
+  requireCsrfToken,
+} = require("../utils/security");
 
-refreshRoute.post("/refresh", validateUnsafeRequestOrigin, refresh);
+refreshRoute.post(
+  "/refresh",
+  validateUnsafeRequestOrigin,
+  requireCsrfToken,
+  refresh,
+);
 
 module.exports = refreshRoute;

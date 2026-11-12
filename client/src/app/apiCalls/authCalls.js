@@ -1,8 +1,19 @@
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import { getCsrfToken } from "../../axios/csrf";
 
-export const logoutUser = () =>
-  axios.post("auth/logout", {}, { withCredentials: true });
+export const logoutUser = async () => {
+  const csrfToken = await getCsrfToken();
+
+  return axios.post(
+    "auth/logout",
+    {},
+    {
+      withCredentials: true,
+      headers: { "X-CSRF-Token": csrfToken },
+    }
+  );
+};
 
 export const useLoginMutation = () => {
   return useMutation({

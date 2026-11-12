@@ -15,6 +15,7 @@ const {
   isProduction,
   refreshCookieOptions,
   validateUnsafeRequestOrigin,
+  requireCsrfToken,
 } = require("../utils/security");
 
 const recaptchaMiddleware =
@@ -166,6 +167,7 @@ authRoute.get("/google/failure", async (req, res) => {
 authRoute.post(
   "/logout",
   validateUnsafeRequestOrigin,
+  requireCsrfToken,
   asyncErrorHandler(async (req, res) => {
     const refreshToken = req.cookies?.refresh_token;
 

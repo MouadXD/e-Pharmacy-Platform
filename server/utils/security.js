@@ -15,6 +15,8 @@ const getAllowedOrigins = () => {
     .filter(Boolean);
 };
 
+const CSRF_SECRET_COOKIE = "csrf_secret";
+const CSRF_TOKEN_HEADER = "x-csrf-token";
 const authCookieNames = ["refresh_token", "connect.sid"];
 
 const hasAuthCookie = (req) => {
@@ -50,6 +52,28 @@ const validateUnsafeRequestOrigin = (req, _res, next) => {
   }
 
   return next(new CustomError("Origin not allowed", 403));
+};
+
+const requireCsrfToken = (req, _res, next) => {
+  const tokens = req.app.locals.csrfTokens;
+  const secret = req.signedCookies?.[CSRF_SECRET_COOKIE];
+  const token = req.get(CSRF_TOKEN_HEADER);
+
+  let valid = false;
+
+  if (tokens && secret && token) {
+    try {
+      valid = tokens.verify(secret, token);
+    } catch {
+      valid = false;
+    }
+  }
+
+  if (!valid) {
+    return next(new CustomError("Invalid CSRF token", 403));
+  }
+
+  next();
 };
 
 const refreshCookieOptions = () => ({
@@ -90,6 +114,9 @@ module.exports = {
   isProduction,
   getAllowedOrigins,
   validateUnsafeRequestOrigin,
+  requireCsrfToken,
+  CSRF_SECRET_COOKIE,
+  CSRF_TOKEN_HEADER,
   refreshCookieOptions,
   clearCookieOptions,
   hashToken,

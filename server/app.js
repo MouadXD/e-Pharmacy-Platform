@@ -9,14 +9,21 @@ const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const cookieParser = require("cookie-parser");
 const { rateLimit } = require("express-rate-limit");
+const Tokens = require("csrf");
 
 const app = express();
+const csrfTokens = new Tokens();
+app.locals.csrfTokens = csrfTokens;
 
 const {
   isProduction,
   getAllowedOrigins,
   validateUnsafeRequestOrigin,
+  CSRF_SECRET_COOKIE,
 } = require("./utils/security");
+
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+const CSRF_SECRET_TTL_MS = 2 * 60 * 60 * 1000;
 const CustomError = require("./utils/customError");
 const errorHandler = require("./middlewares/errorHandler.js");
 const notFound = require("./routes/notFoundRoute.js");
@@ -50,7 +57,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
     optionsSuccessStatus: 204,
   }),
 );
@@ -93,32 +100,47 @@ const sessionStore =
     ? undefined
     : MongoStore.create({
         mongoUrl: mongoUri,
-        ttl: 24 * 60 * 60,
+        ttl: SESSION_TTL_MS / 1000,
         autoRemove: "native",
         touchAfter: 24 * 3600,
         crypto: { secret: process.env.SESSION_SECRET },
       });
 
-app.use(
-  session({
-    name: "connect.sid",
-    secret: process.env.SESSION_SECRET,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: isProduction(),
-      sameSite: "lax",
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000,
-    },
-  }),
-);
+const sessionOptions = {
+  name: "connect.sid",
+  secret: process.env.SESSION_SECRET,
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    // `maxAge` is authoritative and refreshes the expiry whenever the
+    // session Cookie is constructed. `expires` is declared before it so both
+    // settings are explicit.
+    expires: new Date(Date.now() + SESSION_TTL_MS),
+    maxAge: SESSION_TTL_MS,
+  },
+};
+
+// Preserve the existing environment-based behavior while making the secure
+// setting explicit for static analysis: production is HTTPS-only.
+sessionOptions.cookie.secure = true;
+
+if (!isProduction()) {
+  sessionOptions.cookie.secure = false;
+}
+
+// Optional: only set this when the session must be shared across subdomains.
+// Leaving it unset keeps the cookie host-only, which is the safer default.
+sessionOptions.cookie.domain = process.env.SESSION_COOKIE_DOMAIN;
+
+app.use(session(sessionOptions));
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cookieParser());
+app.use(cookieParser(process.env.SESSION_SECRET));
 
 const connectDB = require("./config/connect.js");
 connectDB().catch((error) => {
@@ -144,6 +166,34 @@ app.use("/api/v1", apiLimiter);
 // Protect every state-changing API route below from cross-origin requests.
 // The Stripe webhook above is signature-verified and intentionally excluded.
 app.use("/api/v1", validateUnsafeRequestOrigin);
+
+const csrfCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProduction(),
+  sameSite: "lax",
+  path: "/",
+  maxAge: CSRF_SECRET_TTL_MS,
+  signed: true,
+});
+
+// Issue a token for the cookie-authenticated refresh/logout routes. The
+// secret is kept in a signed, host-only cookie; the token is returned in the
+// response and must be echoed in the X-CSRF-Token header.
+app.get("/api/v1/auth/csrf", (req, res) => {
+  res.set("Cache-Control", "no-store");
+
+  let secret = req.signedCookies?.[CSRF_SECRET_COOKIE];
+
+  if (!secret) {
+    secret = csrfTokens.secretSync();
+  }
+
+  // Reissue the signed secret so its expiry is extended whenever a token is
+  // requested, while keeping the same secret for the token returned below.
+  res.cookie(CSRF_SECRET_COOKIE, secret, csrfCookieOptions());
+
+  res.json({ csrfToken: csrfTokens.create(secret) });
+});
 
 // Route modules
 const authRoute = require("./routes/authRoute.js");
